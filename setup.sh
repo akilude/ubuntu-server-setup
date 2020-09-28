@@ -35,11 +35,11 @@ function main() {
     disableSudoPassword "${username}"
     addSSHKey "${username}" "${sshKey}"
     changeSSHConfig
-    setupUfw
+    # setupUfw
 
-    if ! hasSwap; then
-        setupSwap
-    fi
+    # if ! hasSwap; then
+    #     setupSwap
+    # fi
 
     setupTimezone
 
@@ -53,16 +53,16 @@ function main() {
     echo "Setup Done! Log file is located at ${output_file}" >&3
 }
 
-function setupSwap() {
-    createSwap
-    mountSwap
-    tweakSwapSettings "10" "50"
-    saveSwapSettings "10" "50"
-}
+# function setupSwap() {
+#     createSwap
+#     mountSwap
+#     tweakSwapSettings "10" "50"
+#     saveSwapSettings "10" "50"
+# }
 
-function hasSwap() {
-    [[ "$(sudo swapon -s)" == *"/swapfile"* ]]
-}
+# function hasSwap() {
+#     [[ "$(sudo swapon -s)" == *"/swapfile"* ]]
+# }
 
 function cleanup() {
     if [[ -f "/etc/sudoers.bak" ]]; then
@@ -80,10 +80,10 @@ function logTimestamp() {
 }
 
 function setupTimezone() {
-    echo -ne "Enter the timezone for the server (Default is 'Asia/Singapore'):\n" >&3
+    echo -ne "Enter the timezone for the server (Default is 'Asia/Kolkata'):\n" >&3
     read -r timezone
     if [ -z "${timezone}" ]; then
-        timezone="Asia/Singapore"
+        timezone="Asia/Kolkata"
     fi
     setTimezone "${timezone}"
     echo "Timezone is set to $(cat /etc/timezone)" >&3
