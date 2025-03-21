@@ -18,20 +18,29 @@ includeDependencies
 output_file="output.log"
 
 function main() {
-    read -rp "Enter the username of the new user account:" username
-
-    promptForPassword
+    read -rp "Do you want to create a new non-root user? (Recommended) [Y/N] " createUser
 
     # Run setup functions
     trap cleanup EXIT SIGHUP SIGINT SIGTERM
 
-    addUserAccount "${username}" "${password}"
+    if [[ $createUser == [nN] ]]; then
+        username=$(whoami)
+        updateUserAccount "${username}"
+    elif [[ $createUser == [yY] ]]; then
+        read -rp "Enter the username of the new user account: " username
+        addUserAccount "${username}"
+    else
+	echo 'This is not a valid choice!'
+	exit 1
+    fi
 
     read -rp $'Paste in the public SSH key for the new user:\n' sshKey
     echo 'Running setup script...'
     logTimestamp "${output_file}"
 
     exec 3>&1 >>"${output_file}" 2>&1
+
+
     disableSudoPassword "${username}"
     addSSHKey "${username}" "${sshKey}"
     changeSSHConfig
@@ -43,7 +52,7 @@ function main() {
 
     setupTimezone
 
-    echo "Installing Network Time Protocol... " >&3
+    echo "Configuring System Time... " >&3
     configureNTP
 
     sudo service ssh restart
@@ -87,23 +96,6 @@ function setupTimezone() {
     fi
     setTimezone "${timezone}"
     echo "Timezone is set to $(cat /etc/timezone)" >&3
-}
-
-# Keep prompting for the password and password confirmation
-function promptForPassword() {
-   PASSWORDS_MATCH=0
-   while [ "${PASSWORDS_MATCH}" -eq "0" ]; do
-       read -s -rp "Enter new UNIX password:" password
-       printf "\n"
-       read -s -rp "Retype new UNIX password:" password_confirmation
-       printf "\n"
-
-       if [[ "${password}" != "${password_confirmation}" ]]; then
-           echo "Passwords do not match! Please try again."
-       else
-           PASSWORDS_MATCH=1
-       fi
-   done 
 }
 
 main

@@ -1,14 +1,22 @@
 #!/bin/bash
 
+# Update the user account
+# Arguments:
+#   Account Username
+function updateUserAccount() {
+    local username=${1}
+    
+    sudo passwd -d "${username}"
+    sudo usermod -aG sudo "${username}"
+}
+
 # Add the new user account
 # Arguments:
 #   Account Username
-#   Account Password
 #   Flag to determine if user account is added silently. (With / Without GECOS prompt)
 function addUserAccount() {
     local username=${1}
-    local password=${2}
-    local silent_mode=${3}
+    local silent_mode=${2}
 
     if [[ ${silent_mode} == "true" ]]; then
         sudo adduser --disabled-password --gecos '' "${username}"
@@ -16,8 +24,8 @@ function addUserAccount() {
         sudo adduser --disabled-password "${username}"
     fi
 
-    echo "${username}:${password}" | sudo chpasswd
     sudo usermod -aG sudo "${username}"
+    sudo passwd -d "${username}"
 }
 
 # Add the local machine public SSH Key for the new user account
@@ -53,6 +61,7 @@ function changeSSHConfig() {
 
 # Setup the Uncomplicated Firewall
 function setupUfw() {
+    sudo apt-get install ufw
     sudo ufw allow OpenSSH
     yes y | sudo ufw enable
 }
@@ -116,11 +125,16 @@ function setTimezone() {
 function configureNTP() {
     ubuntu_version="$(lsb_release -sr)"
 
-    if [[ $ubuntu_version == '20.04' ]]; then
+    if [[ $(bc -l <<< "${ubuntu_version} >= 20.04") -eq 1 ]]; then
         sudo systemctl restart systemd-timesyncd
     else
         sudo apt-get update
         sudo apt-get --assume-yes install ntp
+        
+        # force NTP to sync
+        sudo service ntp stop
+        sudo ntpd -gq
+        sudo service ntp start
     fi
 }
 

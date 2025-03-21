@@ -2,9 +2,11 @@
 
 set -e
 
-while getopts "skip" opt; do
+while getopts "s" opt; do
     case $opt in
     s) SKIP_SETUP=true ;;
+    *) echo "usage: $0 [-v] [-r]" >&2
+       exit 1 ;;
     esac
 done
 
@@ -21,7 +23,6 @@ source "${current_dir}/lib/bunit.shl"
 source "${current_dir}/../setupLibrary.sh"
 
 test_user_account=testuser
-test_account_password="123%pass_321"
 
 # shellcheck disable=SC2034
 VERBOSE_MODE="true"
@@ -30,7 +31,7 @@ VERBOSE_MODE="true"
 
 function testSetup () {
     echo "Test Setup"
-    addUserAccount ${test_user_account} ${test_account_password} true
+    addUserAccount ${test_user_account} true
 }
 
 function testUserAccountCreated() {
@@ -115,7 +116,7 @@ function testNTP() {
     configureNTP
     ubuntu_version="$(lsb_release -sr)"
 
-    if [[ $ubuntu_version == '18.04' || $ubuntu_version == '20.04' ]]; then
+    if [[ $(bc -l <<< "${ubuntu_version} >= 18.04") -eq 1 ]]; then
         sleep 2
         assertContains "System clock synchronized: yes" "$(timedatectl status)"
     else
